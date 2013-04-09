@@ -1,20 +1,29 @@
 parseAndAddArgs = (str, args) ->
+    argsToAdd = []
+
     if /\*(.+)*/.test str
-        str.replace(/(.+)?\*(.+)\*(.+)?/, '$1%c$2%c$3')
-        args.push 'font-weight: bold'
-        args.push ''
+        str = str.replace(/(.+)?\*(.+)\*(.+)?/, '$1%c$2%c$3')
+        argsToAdd.push 'font-weight: bold'
+        argsToAdd.push ''
 
     if /\_(.+)_/.test str
-        str.replace(/(.+)?\_(.+)\_(.+)?/, '$1%c$2%c$3')
-        args.push 'font-style: italic'
-        args.push ''
+        str = str.replace(/(.+)?\_(.+)\_(.+)?/, '$1%c$2%c$3')
+        argsToAdd.push 'font-style: italic'
+        argsToAdd.push ''
 
-_log = -> console.log.apply console, Array::slice.call(arguments) if @console and @console.log
+    argsToAdd.unshift str
+    argsToAdd.forEach (arg) -> args.push arg
+
+_log = ->
+    if window.console and window.console.log
+        console.log.apply console, Array::slice.call(arguments)
 
 window.log = ->
     finalArguments = []
 
-    arguments.forEach (arg) ->
+    args = Array::slice.call arguments
+
+    args.forEach (arg) ->
         if typeof arg is 'string'
             parseAndAddArgs arg, finalArguments
 
@@ -23,4 +32,4 @@ window.log = ->
 
     _log.apply window, Array::slice.call(finalArguments)
 
-window.log.literal = window.log.l = _log
+window.log.l = _log
