@@ -9,16 +9,18 @@ parseAndAddArgs = (str, args) ->
         args.push 'font-style: italic'
         args.push ''
 
-window._log = window._literal = -> console.log.apply console, Array::slice.call(arguments) if @console and @console.log
+_log = -> console.log.apply console, Array::slice.call(arguments) if @console and @console.log
 
 window.log = ->
     finalArguments = []
 
-    arguments.forEach arg ->
+    arguments.forEach (arg) ->
         if typeof arg is 'string'
             parseAndAddArgs arg, finalArguments
 
         else
             finalArguments.push arg
 
-    log.apply window, Array::slice.call(finalArguments)
+    _log.apply window, Array::slice.call(finalArguments)
+
+window.log.literal = window.log.l = _log
