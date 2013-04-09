@@ -1,38 +1,36 @@
 return unless window.console and window.console.log
 
 log = ->
-    finalArguments = []
+    args = []
 
-    args = Array::slice.call arguments
-
-    args.forEach (arg) ->
+    makeArray(arguments).forEach (arg) ->
         if typeof arg is 'string'
-            parseAndAddArgs arg, finalArguments
+            args = stringToArgs arg
 
         else
-            finalArguments.push arg
+            args.push arg
 
-    _log.apply window, Array::slice.call(finalArguments)
+    _log.apply window, args
 
 _log = ->
     if window.console and window.console.log
-        console.log.apply console, Array::slice.call(arguments)
+        console.log.apply console, makeArray(arguments)
 
-parseAndAddArgs = (str, args) ->
-    argsToAdd = []
+makeArray = (arrayLikeThing) ->
+    Array::slice.call arrayLikeThing
+
+stringToArgs = (str, args) ->
+    styles = []
 
     if /\*(.+)*/.test str
         str = str.replace(/(.+)?\*(.+)\*(.+)?/, '$1%c$2%c$3')
-        argsToAdd.push 'font-weight: bold'
-        argsToAdd.push ''
+        styles = styles.concat ['font-weight: bold', '']
 
     if /\_(.+)_/.test str
         str = str.replace(/(.+)?\_(.+)\_(.+)?/, '$1%c$2%c$3')
-        argsToAdd.push 'font-style: italic'
-        argsToAdd.push ''
+        styles = styles.concat ['font-style: italic', '']
 
-    argsToAdd.unshift str
-    argsToAdd.forEach (arg) -> args.push arg
+    [str].concat styles
 
 # Export
 window.log = log
