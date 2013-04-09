@@ -1,3 +1,23 @@
+return unless window.console and window.console.log
+
+log = ->
+    finalArguments = []
+
+    args = Array::slice.call arguments
+
+    args.forEach (arg) ->
+        if typeof arg is 'string'
+            parseAndAddArgs arg, finalArguments
+
+        else
+            finalArguments.push arg
+
+    _log.apply window, Array::slice.call(finalArguments)
+
+_log = ->
+    if window.console and window.console.log
+        console.log.apply console, Array::slice.call(arguments)
+
 parseAndAddArgs = (str, args) ->
     argsToAdd = []
 
@@ -14,22 +34,6 @@ parseAndAddArgs = (str, args) ->
     argsToAdd.unshift str
     argsToAdd.forEach (arg) -> args.push arg
 
-_log = ->
-    if window.console and window.console.log
-        console.log.apply console, Array::slice.call(arguments)
-
-window.log = ->
-    finalArguments = []
-
-    args = Array::slice.call arguments
-
-    args.forEach (arg) ->
-        if typeof arg is 'string'
-            parseAndAddArgs arg, finalArguments
-
-        else
-            finalArguments.push arg
-
-    _log.apply window, Array::slice.call(finalArguments)
-
+# Export
+window.log = log
 window.log.l = _log
