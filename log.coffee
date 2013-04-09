@@ -5,7 +5,7 @@ log = ->
 
     makeArray(arguments).forEach (arg) ->
         if typeof arg is 'string'
-            args = stringToArgs arg
+            args = args.concat stringToArgs arg
 
         else
             args.push arg
