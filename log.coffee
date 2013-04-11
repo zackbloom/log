@@ -1,37 +1,105 @@
-return unless window.console and window.console.log
+getMarkdownInstance = ->
+  new markdown.Markdown(markdown.Markdown.dialects.Gruber)
 
-log = ->
-    args = []
+parse = (input) ->
+  md = getMarkdownInstance()
 
-    makeArray(arguments).forEach (arg) ->
-        if typeof arg is 'string'
-            args = args.concat stringToArgs arg
+  md.processInline input
 
-        else
-            args.push arg
+isArray = (obj) ->
+  obj.constructor.toString().indexOf('Array') != -1
 
-    _log.apply window, args
+append = (arr1, arr2) ->
+  arr1.splice arr1.length, 0, arr2...
+  arr1
 
-_log = ->
-    if window.console and window.console.log
-        console.log.apply console, makeArray(arguments)
+merge = (obj1, obj2) ->
+  for k, v of obj2
+    obj1[k] = v
+  obj1
 
-makeArray = (arrayLikeThing) ->
-    Array::slice.call arrayLikeThing
+applyToken = (token) ->
+  element = null
+  format = null
 
-stringToArgs = (str, args) ->
-    styles = []
+  addFormat = (obj) ->
+    format ?= {}
+    merge format, obj
 
-    if /\*(.+)*/.test str
-        str = str.replace(/(.+)?\*(.+)\*(.+)?/, '$1%c$2%c$3')
-        styles = styles.concat ['font-weight: bold', '']
+  if not isArray token
+    # It's just text
+    element = token
+  else
+    # It's a tag (possibly with more tags nested in the block)
+    [type, block] = token
 
-    if /\_(.+)_/.test str
-        str = str.replace(/(.+)?\_(.+)\_(.+)?/, '$1%c$2%c$3')
-        styles = styles.concat ['font-style: italic', '']
+    switch type
+      when 'inlinecode'
+        addFormat
+          'font-family': 'monospace'
 
-    [str].concat styles
+      when 'em'
+        addFormat
+          'font-weight': 900
 
-# Export
+    block = applyToken block
+
+    element = block.element
+    merge format, block.format
+
+  return {element, format}
+
+buildCSS = (format) ->
+  out = ''
+  for key, val of format
+    out += "#{ key }: #{ val };"
+  out
+
+emit = (tokens) ->
+  # We keep them seperate for clarity, but the message which goes to the logger
+  # is just the formatters appended to the end of the elements.
+  elements = []
+  formatters = []
+
+  # %c's are used to style succeding blocks of text.
+  #
+  # The next %c resets the styles.  If there are two styled blocks 
+  # one after another there is no problem as the second's styles will
+  # reset the first, but if there is a nonstyled block after a styled
+  # we need an extra %c to clear the previous styles.
+  inStyle = false
+
+  for token in tokens
+    {element, format} = applyToken token
+
+    if format
+      elements.push '%c'
+      formatters.push buildCSS format
+      inStyle = true
+
+    else if inStyle
+      elements.push '%c'
+      formatters.push ''
+      inStyle = false
+
+    elements.push element
+
+  {elements, formatters}
+
+log = (messages...) ->
+  logFormats = []
+  logElements = []
+
+  for message in messages
+    tokens = parse message
+    {elements, formatters} = emit tokens
+
+    logElements.push elements.join('')
+    append logFormats, formatters
+
+  logArgs = [logElements.join(' ')]
+  append logArgs, logFormats
+
+  console.log logArgs...
+
 window.log = log
-window.log.l = _log
